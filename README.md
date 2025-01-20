@@ -225,3 +225,99 @@ For more questions/discussions feel free to stop by **#nanoGPT** on Discord:
 ## acknowledgements
 
 All nanoGPT experiments are powered by GPUs on [Lambda labs](https://lambdalabs.com), my favorite Cloud GPU provider. Thank you Lambda labs for sponsoring nanoGPT!
+
+
+
+## Additional Implementation of MoE
+### Train (with gpu)
+```sh
+python train.py config/train_shakespeare_char_moe.py
+```
+### Test (with gpu)
+```sh
+python sample.py --out_dir=out-shakespeare-char
+```
+
+### MoE Configs
+<!-- # moe
+moe_enabled = True
+num_experts = 4
+num_experts_per_tok=1
+expert_hidden_dim = 768
+ffn_type = 'ori' # or 'ori' -->
+- `moe_enabled` : whether to use moe or not
+- `num_experts` : number of experts
+- `num_experts_per_tok` : number of experts per token
+- `expert_hidden_dim` : hidden dimension of expert
+- `ffn_type` : type of each expert, 'ori' for naive ffn, 'glu' for gated linear unit
+
+### MoE Training Results
+* Dense Version: 10.65M 6layers, embedding dim=384, hidden dim=1536;  
+```
+GPT(
+  (transformer): ModuleDict(
+    (wte): Embedding(65, 384)
+    (wpe): Embedding(256, 384)
+    (drop): Dropout(p=0.2, inplace=False)
+    (h): ModuleList(
+      (0-5): 6 x Block(
+        (ln_1): LayerNorm()
+        (attn): CausalSelfAttention(
+          (c_attn): Linear(in_features=384, out_features=1152, bias=False)
+          (c_proj): Linear(in_features=384, out_features=384, bias=False)
+          (attn_dropout): Dropout(p=0.2, inplace=False)
+          (resid_dropout): Dropout(p=0.2, inplace=False)
+        )
+        (ln_2): LayerNorm()
+        (mlp): MLP(
+          (c_fc): Linear(in_features=384, out_features=1536, bias=False)
+          (gelu): GELU(approximate='none')
+          (c_proj): Linear(in_features=1536, out_features=384, bias=False)
+          (dropout): Dropout(p=0.2, inplace=False)
+        )
+      )
+    )
+    (ln_f): LayerNorm()
+  )
+  (lm_head): Linear(in_features=384, out_features=65, bias=False)
+)
+```
+* MoE Version: 17.73M(7.22M Activated), 4Experts 1 Activated, expert hidden dim=512, ffn_type='glu'
+```
+GPT(
+  (transformer): ModuleDict(
+    (wte): Embedding(65, 384)
+    (wpe): Embedding(256, 384)
+    (drop): Dropout(p=0.2, inplace=False)
+    (h): ModuleList(
+      (0-5): 6 x Block(
+        (ln_1): LayerNorm()
+        (attn): CausalSelfAttention(
+          (c_attn): Linear(in_features=384, out_features=1152, bias=False)
+          (c_proj): Linear(in_features=384, out_features=384, bias=False)
+          (attn_dropout): Dropout(p=0.2, inplace=False)
+          (resid_dropout): Dropout(p=0.2, inplace=False)
+        )
+        (ln_2): LayerNorm()
+        (mlp): SparseMoeBlock(
+          (experts): ModuleList(
+            (0-3): 4 x MoeMLP(
+              (gate_proj): Linear(in_features=384, out_features=512, bias=False)
+              (up_proj): Linear(in_features=384, out_features=512, bias=False)
+              (down_proj): Linear(in_features=512, out_features=384, bias=False)
+              (act_fn): GELU(approximate='tanh')
+            )
+          )
+          (gate): MoEGate()
+        )
+      )
+    )
+    (ln_f): LayerNorm()
+  )
+  (lm_head): Linear(in_features=384, out_features=65, bias=False)
+)
+```
+
+![nanoGPT](assets/loss_comparison.png)
+
+

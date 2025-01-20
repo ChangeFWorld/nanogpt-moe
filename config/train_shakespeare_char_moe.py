@@ -11,7 +11,7 @@ always_save_checkpoint = False
 
 wandb_log = True # override via command line if you like
 wandb_project = 'shakespeare-char'
-wandb_run_name = 'mini-gpt'
+wandb_run_name = 'mini-gpt-moe'
 
 dataset = 'shakespeare_char'
 gradient_accumulation_steps = 1
@@ -34,4 +34,11 @@ warmup_iters = 100 # not super necessary potentially
 
 # on macbook also add
 # device = 'cpu'  # run on cpu only
-# compile = False # do not torch compile the model
+compile = False # do not torch compile the model
+
+# moe
+moe_enabled = True
+num_experts = 4
+num_experts_per_tok=1
+expert_hidden_dim = 512
+ffn_type = 'glu' # or 'ori'
