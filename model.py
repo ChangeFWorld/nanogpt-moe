@@ -448,8 +448,6 @@ class SparseMoeBlock(nn.Module):
             self.experts = nn.ModuleList([Mlp(hidden_size=embed_dim, intermediate_size=expert_hidden_dim, act_layer=act_layer) for i in range(num_experts)])
         elif ffn_type == "glu":
             self.experts = nn.ModuleList([MoeMLP(hidden_size=embed_dim, intermediate_size=expert_hidden_dim, act_layer=act_layer) for i in range(num_experts)])
-        elif ffn_type == "mol":
-            self.experts = nn.ModuleList([nn.Linear(embed_dim, embed_dim) for i in range(num_experts)])
         else:
             raise NotImplementedError(f"mlp type {ffn_type} is not implemented")
         
